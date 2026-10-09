@@ -2,9 +2,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from flowdesk.core.security import password_hasher
 from flowdesk.modules.users.models import User, UserRole
 from flowdesk.modules.users.repository import UserRepository
-from flowdesk.modules.users.schemas import UserCreateSchema
+from flowdesk.modules.users.schemas import UserRegisterSchema
 from flowdesk.modules.users.service import UserService
 
 
@@ -12,6 +13,7 @@ from flowdesk.modules.users.service import UserService
 async def test_user_service_can_return_user_by_id(user: User) -> None:
     # Arrange
     repository = AsyncMock(spec=UserRepository)
+    repository.get_by_email.return_value = None
     repository.get_by_id.return_value = user
     user_service = UserService(repository=repository)
     # Act
@@ -67,16 +69,16 @@ async def test_user_service_can_return_user_by_email(user: User) -> None:
 
 
 @pytest.mark.asyncio
-async def test_user_service_can_create_user() -> None:
+async def test_user_service_can_register_user() -> None:
     # Arrange
     repository = AsyncMock(spec=UserRepository)
+    repository.get_by_email.return_value = None
 
-    data = UserCreateSchema(
+    data = UserRegisterSchema(
         email="john@example.com",
-        hashed_password="password123",
+        password="password123",
         fname="John",
         lname="Doe",
-        role=UserRole.USER,
     )
 
     saved_user = User(
@@ -84,7 +86,7 @@ async def test_user_service_can_create_user() -> None:
         hashed_password="hashed_password",
         fname=data.fname,
         lname=data.lname,
-        role=data.role,
+        role=UserRole.USER,
     )
 
     repository.create.return_value = saved_user
@@ -105,16 +107,27 @@ async def test_user_service_can_create_user() -> None:
     assert created_user.email == data.email
     assert created_user.fname == data.fname
     assert created_user.lname == data.lname
+    assert created_user.role is UserRole.USER
+    assert created_user.hashed_password != data.password
+    assert password_hasher.verify(data.password, created_user.hashed_password)
 
 
 @pytest.mark.asyncio
-async def test_user_service_create_user_raises_exception_on_failure(user: User) -> None:
+async def test_user_service_register_user_raises_exception_on_failure(user: User) -> None:
     # Arrange
     repository = AsyncMock(spec=UserRepository)
+    repository.get_by_email.return_value = None
     repository.create.side_effect = Exception("Database error")
     user_service = UserService(repository=repository)
     # Act & Assert
     with pytest.raises(Exception) as exc_info:
-        await user_service.create_user(user)
+        await user_service.create_user(
+            UserRegisterSchema(
+                email=user.email,
+                password="password123",
+                fname=user.fname,
+                lname=user.lname,
+            )
+        )
 
     assert str(exc_info.value) == "Database error"

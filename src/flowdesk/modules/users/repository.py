@@ -1,8 +1,10 @@
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from flowdesk.modules.users.exceptions import UserAlreadyExistsError
 from flowdesk.modules.users.models import User
 
 
@@ -20,6 +22,10 @@ class UserRepository:
 
     async def create(self, user: User) -> User:
         self._session.add(user)
-        await self._session.commit()
+        try:
+            await self._session.commit()
+        except IntegrityError as exc:
+            await self._session.rollback()
+            raise UserAlreadyExistsError("User with this email already exists") from exc
         await self._session.refresh(user)
         return user

@@ -1,8 +1,7 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
-from flowdesk.modules.users.models import UserRole
 
 
 class UserSchema(BaseModel):
@@ -16,11 +15,25 @@ class UserSchema(BaseModel):
     is_active: bool = Field(..., description="Indicates if the user is active")
 
 
-class UserCreateSchema(BaseModel):
+class UserRegisterSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     email: EmailStr = Field(..., description="The email address of the user")
-    hashed_password: str = Field(..., description="The password of the user")
+    password: str = Field(..., description="The password of the user", min_length=8)
     fname: str = Field(..., description="The full name of the user")
     lname: str = Field(..., description="The last name of the user")
-    role: UserRole = Field(..., description="The role of the user (e.g.,)")
+
+
+class UserLoginSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    email: EmailStr = Field(..., description="The email address of the user")
+    password: str = Field(..., description="The password of the user", min_length=8)
+
+
+class TokenSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    access_token: str = Field(..., description="The access token for the user")
+    token_type: Literal["bearer"] = Field(..., description="The type of the token (e.g., Bearer)")
+    expires_in: int = Field(..., description="The expiration time of the token in seconds")

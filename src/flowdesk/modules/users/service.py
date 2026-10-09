@@ -1,8 +1,10 @@
 import uuid
 
-from flowdesk.modules.users.models import User
+from flowdesk.core.security import password_hasher
+from flowdesk.modules.users.exceptions import UserAlreadyExistsError
+from flowdesk.modules.users.models import User, UserRole
 from flowdesk.modules.users.repository import UserRepository
-from flowdesk.modules.users.schemas import UserCreateSchema
+from flowdesk.modules.users.schemas import UserRegisterSchema
 
 
 class UserService:
@@ -15,12 +17,17 @@ class UserService:
     async def get_user_by_email(self, email: str) -> User | None:
         return await self.user_repository.get_by_email(email)
 
-    async def create_user(self, data: UserCreateSchema) -> User:
+    async def create_user(self, data: UserRegisterSchema) -> User:
+        if await self.user_repository.get_by_email(data.email):
+            raise UserAlreadyExistsError("User with this email already exists")
         user = User(
             email=data.email,
-            hashed_password=data.hashed_password,
+            hashed_password=password_hasher.hash(data.password),
             fname=data.fname,
             lname=data.lname,
-            role=data.role,
+            role=UserRole.USER,
         )
         return await self.user_repository.create(user)
+
+    async def verify_password(self, password: str, hashed_password: str) -> bool:
+        return password_hasher.verify(password, hashed_password)

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     TEST_DB_HOST: str
     TEST_DB_PORT: int
 
+    # Auth
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int
+
 
 @lru_cache
 def get_settings() -> Settings:

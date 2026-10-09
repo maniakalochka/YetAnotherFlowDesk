@@ -4,7 +4,8 @@ from flowdesk.core import settings
 
 engine = create_async_engine(
     settings.DB_URL,
-    echo=True,
+    isolation_level="READ COMMITTED",
+    pool_pre_ping=True,
 )
 
 AsyncSessionLocal = async_sessionmaker(
