@@ -2,13 +2,15 @@ import enum
 import uuid
 
 from sqlalchemy import UUID, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from flowdesk.infrastructure.database.base import Base
+from flowdesk.modules.tickets.models import Ticket, TicketComment, TicketStatusHistory
 
 
-class UserRole(enum.Enum):
+class UserRole(enum.StrEnum):
     ADMIN = "admin"
+    SUPPORT = "support"
     USER = "user"
 
 
@@ -23,3 +25,22 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(nullable=False, default=UserRole.USER)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+    created_tickets: Mapped[list["Ticket"]] = relationship(
+        "Ticket",
+        back_populates="author",
+        foreign_keys="Ticket.author_id",
+    )
+    assigned_tickets: Mapped[list["Ticket"]] = relationship(
+        "Ticket",
+        back_populates="assignee",
+        foreign_keys="Ticket.assignee_id",
+    )
+    ticket_status_changes: Mapped[list["TicketStatusHistory"]] = relationship(
+        "TicketStatusHistory",
+        back_populates="changed_by",
+    )
+    ticket_comments: Mapped[list["TicketComment"]] = relationship(
+        "TicketComment",
+        back_populates="author",
+    )
