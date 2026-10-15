@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, WebSocket, WebSocketException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,23 +27,17 @@ def get_user_service(
     return UserService(repository)
 
 
-async def get_current_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None,
-        Depends(http_bearer),
-    ],
-    user_service: Annotated[
-        UserService,
-        Depends(get_user_service),
-    ],
+async def get_user_from_token(
+    token: str,
+    user_service: UserService,
 ) -> User:
-    if credentials is None:
-        raise credentials_exception
     try:
-        payload = jwt_service.decode_access_token(credentials.credentials)
+        payload = jwt_service.decode_access_token(token)
         sub = payload.get("sub")
+
         if sub is None:
-            raise credentials_exception
+            raise ValueError("Missing sub")
+
         user_id = UUID(sub)
 
     except (jwt.InvalidTokenError, ValueError):
@@ -53,10 +47,56 @@ async def get_current_user(
 
     if user is None or not user.is_active:
         raise credentials_exception
+
     return user
 
 
+async def get_ws_current_user(
+    websocket: WebSocket,
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> User:
+    token = websocket.query_params.get("token")
+
+    if not token:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Missing token",
+        )
+
+    try:
+        return await get_user_from_token(token, user_service)
+
+    except HTTPException:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Invalid credentials",
+        ) from None
+
+
+WsCurrentUserDep = Annotated[
+    User,
+    Depends(get_ws_current_user),
+]
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+
+
+async def get_current_user(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Depends(http_bearer),
+    ],
+    user_service: UserServiceDep,
+) -> User:
+    if credentials is None:
+        raise credentials_exception
+
+    return await get_user_from_token(
+        credentials.credentials,
+        user_service,
+    )
+
 
 CurrentUserDep = Annotated[
     User,

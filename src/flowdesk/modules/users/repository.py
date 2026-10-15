@@ -29,3 +29,8 @@ class UserRepository:
             raise UserAlreadyExistsError("User with this email already exists") from exc
         await self._session.refresh(user)
         return user
+
+    async def save(self, user: User) -> User:
+        await self._session.commit()
+        await self._session.refresh(user)
+        return user

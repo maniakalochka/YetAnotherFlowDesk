@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from flowdesk.infrastructure.database.base import Base
 
 if TYPE_CHECKING:
+    from flowdesk.modules.chat.models import TicketChatMessage
     from flowdesk.modules.users.models import User
 
 
@@ -49,8 +50,8 @@ class Ticket(Base):
     ticket_category: Mapped["TicketCategory | None"] = relationship(
         "TicketCategory", back_populates="tickets"
     )
-    comments: Mapped[list["TicketComment"]] = relationship(
-        "TicketComment",
+    messages: Mapped[list["TicketChatMessage"]] = relationship(
+        "TicketChatMessage",
         back_populates="ticket",
     )
     history: Mapped[list["TicketStatusHistory"]] = relationship(
@@ -75,26 +76,12 @@ class TicketStatusHistory(Base):
     changed_by: Mapped["User"] = relationship("User", back_populates="ticket_status_changes")
 
 
-class TicketComment(Base):
-    __tablename__ = "ticket_comments"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    text: Mapped[str] = mapped_column(nullable=False)
-    ticket_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("tickets.id"), nullable=False
-    )
-    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
-
-    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="comments")
-    author: Mapped["User"] = relationship("User", back_populates="ticket_comments")
-
-
 class TicketCategory(Base):
     __tablename__ = "ticket_categories"
 
     id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
-    description: Mapped[str] = mapped_column(nullable=True)
+    description: Mapped[str | None] = mapped_column(nullable=True)
 
     tickets: Mapped[list["Ticket"]] = relationship(
         "Ticket",

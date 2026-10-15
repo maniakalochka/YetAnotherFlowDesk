@@ -14,6 +14,8 @@ from flowdesk.infrastructure.database.session import (
     AsyncSessionLocal,
     engine,
 )
+from flowdesk.modules.chat.api import chat_router
+from flowdesk.modules.tickets.api import tickets_router
 from flowdesk.modules.users.api import user_router
 
 logger = get_logger("flowdesk.main")
@@ -41,9 +43,14 @@ app.include_router(
     tags=["users"],
 )
 
+app.include_router(chat_router, tags=["chat"])
+app.include_router(tickets_router, tags=["tickets"])
+
 
 @app.get("/ready")
-async def readiness(session: Annotated[AsyncSession, Depends(get_async_session)]) -> dict[str, str]:
+async def readiness(
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+) -> dict[str, str]:
     await session.execute(text("SELECT 1"))
     return {"status": "ok"}
 

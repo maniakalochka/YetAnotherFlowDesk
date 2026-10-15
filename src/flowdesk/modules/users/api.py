@@ -42,7 +42,8 @@ async def get_user_by_email(
     user = await user_service.get_user_by_email(email)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User with email {email} not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User with email {email} not found",
         )
     return UserSchema.model_validate(user)
 
@@ -52,13 +53,15 @@ async def register_user(user: UserRegisterSchema, user_service: UserServiceDep) 
     existing_user = await user_service.get_user_by_email(user.email)
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists",
         )
     try:
         new_user = await user_service.create_user(user)
     except UserAlreadyExistsError:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists",
         ) from None
     return UserSchema.model_validate(new_user)
 

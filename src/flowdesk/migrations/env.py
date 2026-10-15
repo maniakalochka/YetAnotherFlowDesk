@@ -7,6 +7,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from flowdesk.core.config import settings
 from flowdesk.infrastructure.database.base import Base
+from flowdesk.modules.chat.models import TicketChatMessage  # noqa: F401
+from flowdesk.modules.tickets.models import (  # noqa: F401
+    Ticket,
+    TicketCategory,
+    TicketStatusHistory,
+)
 from flowdesk.modules.users.models import User  # noqa: F401
 
 config = context.config

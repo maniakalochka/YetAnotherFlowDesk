@@ -5,7 +5,8 @@ from sqlalchemy import UUID, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from flowdesk.infrastructure.database.base import Base
-from flowdesk.modules.tickets.models import Ticket, TicketComment, TicketStatusHistory
+from flowdesk.modules.chat.models import TicketChatMessage
+from flowdesk.modules.tickets.models import Ticket, TicketStatusHistory
 
 
 class UserRole(enum.StrEnum):
@@ -40,7 +41,7 @@ class User(Base):
         "TicketStatusHistory",
         back_populates="changed_by",
     )
-    ticket_comments: Mapped[list["TicketComment"]] = relationship(
-        "TicketComment",
+    ticket_comments: Mapped[list["TicketChatMessage"]] = relationship(
+        "TicketChatMessage",
         back_populates="author",
     )
