@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
 
 from flowdesk.dependencies.chat import TicketChatServiceDep
@@ -82,6 +82,9 @@ async def get_message_history(
     current_user: CurrentUserDep,
     ticket_service: TicketServiceDep,
     chat_service: TicketChatServiceDep,
+    limit: int = Query(
+        30, ge=1, le=100, description="Number of messages to retrieve (default: 30)"
+    ),
 ) -> list[TicketChatMessageSchema]:
     ticket = await ticket_service.get_ticket_by_id(ticket_id)
     if ticket is None:
@@ -91,5 +94,5 @@ async def get_message_history(
         )
 
     ensure_ticket_access(ticket, current_user)
-    messages = await chat_service.get_message_history(ticket_id)
+    messages = await chat_service.get_message_history(ticket_id, limit)
     return [TicketChatMessageSchema.model_validate(message) for message in messages]

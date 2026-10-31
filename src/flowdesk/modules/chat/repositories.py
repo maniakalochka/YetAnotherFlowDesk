@@ -11,12 +11,15 @@ class TicketChatRepository:
         self.session = session
 
     async def get_ticket_chat_messages_by_ticket_id(
-        self, ticket_id: uuid.UUID
+        self,
+        ticket_id: uuid.UUID,
+        limit: int = 30,  # hardcoded limit for now, can be changed later if needed
     ) -> list[TicketChatMessage]:
         stmt = (
             select(TicketChatMessage)
             .where(TicketChatMessage.ticket_id == ticket_id)
             .order_by(TicketChatMessage.created_at, TicketChatMessage.id)
+            .limit(limit)
         )
         result = await self.session.scalars(stmt)
         return list(result.all())

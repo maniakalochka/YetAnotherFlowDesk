@@ -47,7 +47,7 @@ async def test_get_message_history_delegates_to_repository() -> None:
     ]
     repository.get_ticket_chat_messages_by_ticket_id.return_value = messages
 
-    result = await service.get_message_history(ticket_id)
+    result = await service.get_message_history(ticket_id, limit=30)
 
     assert result == messages
-    repository.get_ticket_chat_messages_by_ticket_id.assert_awaited_once_with(ticket_id)
+    repository.get_ticket_chat_messages_by_ticket_id.assert_awaited_once_with(ticket_id, limit=30)

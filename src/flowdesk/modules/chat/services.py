@@ -22,5 +22,7 @@ class TicketChatService:
         )
         return await self.repository.create_ticket_chat_message(message)
 
-    async def get_message_history(self, ticket_id: uuid.UUID) -> list[TicketChatMessage]:
-        return await self.repository.get_ticket_chat_messages_by_ticket_id(ticket_id)
+    async def get_message_history(
+        self, ticket_id: uuid.UUID, limit: int = 30
+    ) -> list[TicketChatMessage]:
+        return await self.repository.get_ticket_chat_messages_by_ticket_id(ticket_id, limit=limit)

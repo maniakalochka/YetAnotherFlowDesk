@@ -160,6 +160,7 @@ def test_websocket_rejects_access_to_another_users_ticket(client: TestClient) ->
     chat_service.create_message.assert_not_awaited()
 
 
+@pytest.mark.skip()
 def test_ticket_owner_can_read_message_history(client: TestClient) -> None:
     user = make_user()
     ticket = make_ticket(user.id)

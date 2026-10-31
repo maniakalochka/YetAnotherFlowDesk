@@ -29,6 +29,7 @@ class ConnectionManager:
         for ws in tuple(connections):
             try:
                 await ws.send_json(message)
+
             except (RuntimeError, OSError):
                 self.disconnect(ticket_id, ws)
 
