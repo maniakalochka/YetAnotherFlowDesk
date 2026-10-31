@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from flowdesk.dependencies.permissions import SupportOrAdminDep
 from flowdesk.dependencies.ticket import (
@@ -49,6 +49,21 @@ async def get_ticket(
 
     ensure_ticket_access(ticket, current_user)
     return TicketSchema.model_validate(ticket)
+
+
+@tickets_router.get("/tickets", response_model=list[TicketSchema])
+async def list_tickets(
+    current_user: CurrentUserDep,
+    ticket_service: TicketServiceDep,
+    limit: int = Query(default=100, ge=1, le=1000),
+    skip: int = Query(default=0, ge=0),
+) -> list[TicketSchema]:
+    if current_user.role is UserRole.USER:
+        tickets = await ticket_service.list_tickets_by_author_id(current_user.id)
+    else:
+        tickets = await ticket_service.list_tickets(skip=skip, limit=limit)
+
+    return [TicketSchema.model_validate(ticket) for ticket in tickets]
 
 
 @tickets_router.post(

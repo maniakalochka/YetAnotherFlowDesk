@@ -29,7 +29,17 @@ class TicketRepository(TicketBaseRepository):
         return result.scalar_one_or_none()
 
     async def list_tickets(self, skip: int = 0, limit: int = 100) -> Sequence[Ticket]:
+        """
+        admin and support can see all tickets, user can only see their own tickets.
+        """
         stmt = select(Ticket).offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
+    async def list_tickets_by_author_id(
+        self, author_id: uuid.UUID, skip: int = 0, limit: int = 100
+    ) -> Sequence[Ticket]:
+        stmt = select(Ticket).where(Ticket.author_id == author_id).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()
 

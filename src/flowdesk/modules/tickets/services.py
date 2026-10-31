@@ -42,6 +42,13 @@ class TicketService:
     async def list_tickets(self, skip: int = 0, limit: int = 100) -> Sequence[Ticket]:
         return await self.ticket_repository.list_tickets(skip=skip, limit=limit)
 
+    async def list_tickets_by_author_id(
+        self, author_id: uuid.UUID, skip: int = 0, limit: int = 100
+    ) -> Sequence[Ticket]:
+        return await self.ticket_repository.list_tickets_by_author_id(
+            author_id, skip=skip, limit=limit
+        )
+
 
 class TicketStatusHistoryService:
     def __init__(
