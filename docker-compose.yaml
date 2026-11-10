@@ -1,4 +1,5 @@
 x-app-environment: &app-environment
+  # PostgreSQL
   DB_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
   DB_USER: ${DB_USER}
   DB_PASSWORD: ${DB_PASSWORD}
@@ -6,6 +7,7 @@ x-app-environment: &app-environment
   DB_HOST: ${DB_HOST}
   DB_PORT: ${DB_PORT}
 
+  # Test PostgreSQL
   TEST_DB_URL: postgresql+asyncpg://${TEST_DB_USER}:${TEST_DB_PASSWORD}@${TEST_DB_HOST}:${TEST_DB_PORT}/${TEST_DB_NAME}
   TEST_DB_USER: ${TEST_DB_USER}
   TEST_DB_PASSWORD: ${TEST_DB_PASSWORD}
@@ -13,9 +15,17 @@ x-app-environment: &app-environment
   TEST_DB_HOST: ${TEST_DB_HOST}
   TEST_DB_PORT: ${TEST_DB_PORT}
 
+  # JWT
   JWT_SECRET_KEY: ${JWT_SECRET_KEY}
   JWT_ALGORITHM: ${JWT_ALGORITHM}
   JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+
+  # RabbitMQ
+  RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile
 
 services:
   postgres:
@@ -34,11 +44,29 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.4-management-alpine
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
 
   migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: *app-build
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,11 +75,11 @@ services:
     restart: "no"
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: *app-build
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -66,5 +94,42 @@ services:
       retries: 10
       start_period: 20s
 
+  notification-worker:
+    build: *app-build
+    command:
+      - uv
+      - run
+      - faststream
+      - run
+      - flowdesk.infrastructure.worker:faststream
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  outbox-worker:
+    build: *app-build
+    command:
+      - uv
+      - run
+      - python
+      - -m
+      - flowdesk.infrastructure.outbox.worker
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  rabbitmq_data:

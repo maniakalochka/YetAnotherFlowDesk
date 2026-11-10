@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from flowdesk.core.config import settings
 from flowdesk.infrastructure.database.base import Base
+from flowdesk.infrastructure.outbox.models import OutboxEvent  # noqa: F401
 from flowdesk.modules.chat.models import TicketChatMessage  # noqa: F401
 from flowdesk.modules.tickets.models import (  # noqa: F401
     Ticket,
