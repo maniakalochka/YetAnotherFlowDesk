@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from flowdesk.core.logging import get_logger
 from flowdesk.dependencies.database import get_async_session
+from flowdesk.infrastructure.broker.queues import notification
+from flowdesk.infrastructure.broker.rabbit import broker
 from flowdesk.infrastructure.database.session import (
     AsyncSessionLocal,
     engine,
@@ -30,6 +32,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     try:
         logger.info("Application started successfully")
+        async with broker:
+            await broker.declare_queue(notification)
         yield
     finally:
         await engine.dispose()

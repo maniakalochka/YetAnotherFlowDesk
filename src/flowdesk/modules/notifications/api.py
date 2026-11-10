@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from flowdesk.dependencies.notification import NotificationServiceDep
 from flowdesk.dependencies.user import CurrentUserDep
 from flowdesk.modules.notifications.model import Notification
-from flowdesk.modules.notifications.schemas import (
+from flowdesk.modules.notifications.schemas.notification import (
     NotificationCreateSchema,
     NotificationSchema,
     NotificationUpdateSchema,

@@ -46,8 +46,7 @@ class TicketRepository(TicketBaseRepository):
     async def create_ticket(self, ticket: Ticket, author_id: uuid.UUID) -> Ticket:
         ticket.author_id = author_id
         self.session.add(ticket)
-        await self.session.commit()
-        await self.session.refresh(ticket)
+        await self.session.flush()
         return ticket
 
     async def update_ticket(

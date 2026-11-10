@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
 
+    # RabbitMQ
+    RABBITMQ_URL: str
+
     # Test Rel DB
     TEST_DB_URL: str
     TEST_DB_USER: str

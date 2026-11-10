@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from flowdesk.dependencies.database import get_async_session
 from flowdesk.dependencies.user import WsCurrentUserDep
+from flowdesk.infrastructure.outbox.repository import OutBoxRepository
 from flowdesk.modules.tickets.models import Ticket
 from flowdesk.modules.tickets.repositories import (
     TicketCategoryRepository,
@@ -26,9 +27,13 @@ def get_ticket_repository(
 
 
 def get_ticket_service(
-    repository: Annotated[TicketRepository, Depends(get_ticket_repository)],
+    session: AsyncSession = Depends(get_async_session),
 ) -> TicketService:
-    return TicketService(repository)
+    return TicketService(
+        ticket_repository=get_ticket_repository(session),
+        outbox_repository=OutBoxRepository(session),
+        session=session,
+    )
 
 
 def get_ticket_status_history_repository(

@@ -1,6 +1,12 @@
 import uuid
 from collections.abc import Sequence
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from flowdesk.infrastructure.outbox.models import OutboxEvent
+from flowdesk.infrastructure.outbox.repository import OutBoxRepository
+from flowdesk.modules.notifications.model import NotificationType
+from flowdesk.modules.notifications.schemas.messages import CreateNotificationMessage
 from flowdesk.modules.tickets.models import (
     Ticket,
     TicketCategory,
@@ -21,15 +27,44 @@ from flowdesk.modules.tickets.schemas import (
 
 
 class TicketService:
-    def __init__(self, ticket_repository: TicketRepository):
+    def __init__(
+        self,
+        ticket_repository: TicketRepository,
+        outbox_repository: OutBoxRepository,
+        session: AsyncSession,
+    ):
         self.ticket_repository = ticket_repository
+        self.outbox_repository = outbox_repository
+        self.session = session
 
     async def get_ticket_by_id(self, ticket_id: uuid.UUID) -> Ticket | None:
         return await self.ticket_repository.get_ticket_by_id(ticket_id)
 
     async def create_ticket(self, data: TicketCreateSchema, author_id: uuid.UUID) -> Ticket:
-        ticket = Ticket(**data.model_dump(), author_id=author_id)
-        return await self.ticket_repository.create_ticket(ticket, author_id)
+        try:
+            ticket = Ticket(**data.model_dump(), author_id=author_id)
+            ticket = await self.ticket_repository.create_ticket(ticket, author_id)
+
+            notification_message = CreateNotificationMessage(
+                event_id=uuid.uuid4(),
+                user_id=author_id,
+                ticket_id=ticket.id,
+                type=NotificationType.TICKET_CREATED,
+                title=f"New Ticket Created: {ticket.title}",
+                message=f"A new ticket has been created with ID: {ticket.id}",
+            )
+            outbox_event = OutboxEvent(
+                id=notification_message.event_id,
+                event_type="ticket.created",
+                payload=notification_message.model_dump(mode="json"),
+            )
+            await self.outbox_repository.create_outbox_event(outbox_event)
+            await self.session.commit()
+            return ticket
+        except Exception as e:
+            await self.session.rollback()
+            raise e
+        return ticket
 
     async def update_ticket(
         self, ticket_id: uuid.UUID, ticket_data: TicketUpdateSchema
