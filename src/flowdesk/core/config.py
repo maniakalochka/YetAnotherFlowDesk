@@ -7,7 +7,11 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # Rel DB
     DB_URL: str
@@ -16,14 +20,6 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_HOST: str
     DB_PORT: int
-
-    # Test Rel DB
-    TEST_DB_URL: str
-    TEST_DB_USER: str
-    TEST_DB_PASSWORD: str
-    TEST_DB_NAME: str
-    TEST_DB_HOST: str
-    TEST_DB_PORT: int
 
     # Broker
     RABBITMQ_USER: str

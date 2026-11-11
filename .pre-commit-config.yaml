@@ -29,8 +29,8 @@ repos:
         types: [ python ]
 
       - id: pytest
-        name: pytest
-        entry: uv run pytest
+        name: tests (Docker Compose)
+        entry: bash scripts/run_tests_in_compose.sh
         language: system
         pass_filenames: false
-        types: [ python ]
+        always_run: true
