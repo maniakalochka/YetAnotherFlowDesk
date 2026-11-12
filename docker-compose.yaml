@@ -93,7 +93,7 @@ services:
       - run
       - faststream
       - run
-      - flowdesk.infrastructure.worker:faststream
+      - flowdesk.worker:faststream
     environment: *app-environment
     depends_on:
       postgres:

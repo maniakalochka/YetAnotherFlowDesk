@@ -56,6 +56,6 @@ class Notification(Base):
         nullable=False,
     )
 
-    event_id: Mapped[uuid.UUID | None] = mapped_column(
+    event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, unique=True, index=True
     )

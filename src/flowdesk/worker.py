@@ -7,6 +7,8 @@ from flowdesk.modules.notifications.model import Notification
 from flowdesk.modules.notifications.repository import NotificationRepository
 from flowdesk.modules.notifications.schemas.messages import CreateNotificationMessage
 from flowdesk.modules.notifications.service import NotificationService
+from flowdesk.modules.tickets.models import Ticket  # noqa: F401
+from flowdesk.modules.users.models import User  # noqa: F401
 
 faststream = FastStream(broker)
 

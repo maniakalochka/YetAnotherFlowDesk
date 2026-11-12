@@ -22,8 +22,6 @@ class Settings(BaseSettings):
     DB_PORT: int
 
     # Broker
-    RABBITMQ_USER: str
-    RABBITMQ_PASSWORD: str
     RABBITMQ_URL: str
 
     # Auth
