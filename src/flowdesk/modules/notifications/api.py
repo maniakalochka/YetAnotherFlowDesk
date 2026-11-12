@@ -4,9 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from flowdesk.dependencies.notification import NotificationServiceDep
 from flowdesk.dependencies.user import CurrentUserDep
-from flowdesk.modules.notifications.model import Notification
 from flowdesk.modules.notifications.schemas.notification import (
-    NotificationCreateSchema,
     NotificationSchema,
     NotificationUpdateSchema,
 )
@@ -37,14 +35,3 @@ async def mark_notification_as_read(
         raise HTTPException(status_code=401, detail="Unauthorized")
     await notification_service.mark_notification_as_read(notification_id)
     return NotificationUpdateSchema(is_read=True)
-
-
-@notification_router.post(
-    "/notifications", response_model=NotificationCreateSchema, status_code=201
-)
-async def create_notification(
-    notification: Notification,
-    notification_service: NotificationServiceDep,
-) -> NotificationCreateSchema:
-    created_notification = await notification_service.add(notification)
-    return NotificationCreateSchema.model_validate(created_notification)

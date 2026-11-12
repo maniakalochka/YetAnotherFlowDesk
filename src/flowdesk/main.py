@@ -17,6 +17,7 @@ from flowdesk.infrastructure.database.session import (
     engine,
 )
 from flowdesk.modules.chat.api import chat_router
+from flowdesk.modules.notifications.api import notification_router
 from flowdesk.modules.tickets.api import tickets_router
 from flowdesk.modules.users.api import user_router
 
@@ -34,7 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         logger.info("Application started successfully")
         async with broker:
             await broker.declare_queue(notification)
-        yield
+            yield
     finally:
         await engine.dispose()
         logger.info("Application shutdown")
@@ -46,6 +47,7 @@ app.include_router(
     user_router,
     tags=["users"],
 )
+app.include_router(notification_router, tags=["notifications"])
 
 app.include_router(chat_router, tags=["chat"])
 app.include_router(tickets_router, tags=["tickets"])
